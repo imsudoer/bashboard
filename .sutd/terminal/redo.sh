@@ -1,5 +1,22 @@
 #!/bin/bash
 
+# :helpme:
+# title: Redo Last
+# desc: Re-run the previous command, optionally with modifications
+# category: utility
+# usage:
+#   redo                          repeat last command as-is
+#   redo <arg>                    replace args with new ones
+#   redo s/old/new/               sed-replace in last command
+# examples:
+#   ls /etc
+#   redo                          # ls /etc
+#   redo /var                     # ls /var
+#   redo s|etc|var|               # ls /var
+#   systemctl status nginx
+#   redo restart nginx            # systemctl restart nginx
+# :endhelpme:
+
 redo() {
     local last
     last=$(fc -ln -2 2>/dev/null | head -1 | sed 's/^[[:space:]]*//')

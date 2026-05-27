@@ -1,5 +1,28 @@
 #!/bin/bash
 
+# :helpme:
+# title: Fast Find
+# desc: Find files by name, content, or age with sane shortcuts
+# category: search
+# usage:
+#   f <pattern>                find files matching name in current dir
+#   f <pattern> <dir>          find in specific directory
+#   f -c "<text>"              grep content recursively
+#   f -c "<text>" <dir>        grep content in specific dir
+#   f -h <hours>               modified in last N hours
+#   f -d <days>                modified in last N days
+#   f -t f                     files only
+#   f -t d                     directories only
+#   f --help                   this help
+# examples:
+#   f config
+#   f config /etc
+#   f -c "DATABASE_URL"
+#   f -c "TODO" src/
+#   f -d 1
+#   f -h 6 -t f
+#   f -d 7 -t d
+# :endhelpme:
 f() {
     local dir="."
     local pattern=""

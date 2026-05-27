@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# :helpme:
+# title: JSON Peek
+# desc: Pretty-print JSON with syntax coloring, no jq required
+# category: utility
+# usage:
+#   peek <file.json>              view file
+#   cat file | peek               from stdin
+#   curl ... | peek               pipe API output
+# examples:
+#   peek config.json
+#   curl -s api.github.com/users/torvalds | peek
+#   echo '{"a":1,"b":[1,2,3]}' | peek
+#   docker inspect nginx | peek
+# :endhelpme:
+
 peek() {
     local input
     

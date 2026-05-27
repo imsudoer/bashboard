@@ -1,5 +1,29 @@
 #!/bin/bash
 
+# :helpme:
+# title: Safe Destructive Commands
+# desc: Confirmation guards for rm, dd, mkfs, chmod, chown, iptables
+# category: safety
+# usage:
+#   Just use rm/dd/mkfs/chmod/chown/iptables normally — guards kick in automatically.
+#   Bypass guard with:
+#     command rm ...              call original
+#     \rm ...                     same effect
+#
+#   Levels (set SAFE_RM_LEVEL in info.conf):
+#     1                           simple y/n
+#     2                           type 'yes' (default)
+#     3                           type random 4-digit code
+#
+#   Critical paths always level 3:
+#     /  /etc  /var  /usr  /boot  /home  $HOME
+# examples:
+#   rm -rf /tmp/test              # asks confirmation
+#   rm -rf /                      # forces 4-digit code
+#   chmod -R 777 /opt             # asks 'yes'
+#   command rm -rf /tmp/test      # bypass guard
+# :endhelpme:
+
 __SAFE_LEVEL="${SAFE_RM_LEVEL:-2}"
 
 __safe_critical_paths=(

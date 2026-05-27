@@ -1,5 +1,21 @@
 #!/bin/bash
 
+# :helpme:
+# title: Environment Check
+# desc: Verify required tools are installed using named presets
+# category: system
+# usage:
+#   env-check                     list available presets
+#   env-check <preset>            run a preset (web, py, node, docker)
+#   env-check tool1 tool2         check individual tools
+#   env-check -l <preset>         edit preset in $EDITOR
+#   env-check --edit <preset>     same as -l
+# examples:
+#   env-check py
+#   env-check docker
+#   env-check curl wget git
+#   env-check -l web
+# :endhelpme:
 __ENV_DIR="$HOME/.sutd/data/env-checks"
 mkdir -p "$__ENV_DIR"
 

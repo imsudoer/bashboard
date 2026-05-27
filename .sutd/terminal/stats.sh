@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# :helpme:
+# title: Shell Statistics
+# desc: Show command usage stats, streaks, and unlocked achievements
+# category: utility
+# usage:
+#   stats                         show full report
+# examples:
+#   stats
+# :endhelpme:
+
 stats() {
     local SUTD_DIR="$HOME/.sutd"
     

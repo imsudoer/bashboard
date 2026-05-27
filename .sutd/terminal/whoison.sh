@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# :helpme:
+# title: Who Is On
+# desc: Show all logged-in users with idle time, processes, and SSH origin
+# category: monitoring
+# usage:
+#   whoison                       list all active sessions
+# examples:
+#   whoison
+# :endhelpme:
+
 whoison() {
     echo -e "  \033[37mUsers currently logged in:\033[0m"
     

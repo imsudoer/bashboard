@@ -25,4 +25,4 @@ set_prompt() {
     PS1="${UI_USER}\u${UI_RESET}@${UI_HOST}\h${UI_RESET}:${UI_PATH}\w${UI_RESET} ${ARROW} "
 }
 
-PROMPT_COMMAND=set_prompt
+PROMPT_COMMAND="$PROMPT_COMMAND;set_prompt"
