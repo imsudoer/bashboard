@@ -30,8 +30,10 @@ SLIDES=(
     "Services|50-services.sh"
     "Docker|60-docker.sh"
     "SSL Certs|45-ssl-certs.sh"
-    "Security|70-security.sh"
-    "Updates|80-updates.sh"
+    "Security|70-security.sh 73-sshd-config.sh"
+    "Sessions|67-screen-sessions.sh"
+    "Updates|82-package-updates.sh 80-updates.sh"
+    "Web|63-nginx-stats.sh"
     "Achievements|51-achievements.sh"
     "Last Cmds|95-last-commands.sh"
 )
