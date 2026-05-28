@@ -1,42 +1,33 @@
 #!/bin/bash
 
-STATUS_LOG="${OPENVPN_STATUS_LOG:-/var/log/openvpn/status.log}"
-SERVER_LOG="${OPENVPN_SERVER_LOG:-/var/log/openvpn/status.log}"
+STATUS_LOG="${OPENVPN_STATUS_LOG:-/var/log/openvpn/openvpn-status.log}"
+SERVER_LOG="${OPENVPN_SERVER_LOG:-/var/log/openvpn/openvpn.log}"
 SPECIAL_CLIENTS="${OPENVPN_SPECIAL_CLIENTS:-OnlySq Promo|10.8.0.2,OnlySq Nash|10.8.0.3}"
-VPN_IFACE="${OPENVPN_IFACE:-tun0}"
-VPN_SERVICE="${OPENVPN_SERVICE:-openvpn-server@server}"
 
-svc_state=$(systemctl is-active "$VPN_SERVICE" 2>/dev/null)
-[ "$svc_state" != "active" ] && svc_state=$(systemctl is-active openvpn@server 2>/dev/null)
-[ "$svc_state" != "active" ] && svc_state=$(systemctl is-active openvpn 2>/dev/null)
-
-iface_exists=0
-[ -d "/sys/class/net/$VPN_IFACE" ] && iface_exists=1
-
-status_readable=0
-[ -r "$STATUS_LOG" ] && status_readable=1
-
-if [ "$svc_state" != "active" ] && [ "$iface_exists" = "0" ] && [ "$status_readable" = "0" ]; then
-    exit 0
-fi
+[ ! -r "$STATUS_LOG" ] && exit 0
 
 divider
 section "OpenVPN:"
+
+svc_state=$(systemctl is-active openvpn-server@server 2>/dev/null)
+[ "$svc_state" = "active" ] || svc_state=$(systemctl is-active openvpn@server 2>/dev/null)
+[ "$svc_state" = "active" ] || svc_state=$(systemctl is-active openvpn 2>/dev/null)
 
 case "$svc_state" in
     active)   icon="${COLOR_GREEN}●${COLOR_RESET}"; status_text="running" ;;
     inactive) icon="${COLOR_RED}●${COLOR_RESET}"; status_text="stopped" ;;
     failed)   icon="${COLOR_RED}✗${COLOR_RESET}"; status_text="failed" ;;
-    *)        icon="${COLOR_GRAY}○${COLOR_RESET}"; status_text="${svc_state:-unknown}" ;;
+    *)        icon="${COLOR_GRAY}○${COLOR_RESET}"; status_text="unknown" ;;
 esac
 
 field "Service" "${icon} ${status_text}"
 
-if [ "$iface_exists" = "1" ]; then
-    field "Interface" "${VPN_IFACE} ${COLOR_GREEN}up${COLOR_RESET}"
+vpn_iface="${OPENVPN_IFACE:-tun0}"
+if [ -d "/sys/class/net/$vpn_iface" ]; then
+    field "Interface" "${vpn_iface} ${COLOR_GREEN}up${COLOR_RESET}"
     
-    rx=$(cat /sys/class/net/$VPN_IFACE/statistics/rx_bytes 2>/dev/null)
-    tx=$(cat /sys/class/net/$VPN_IFACE/statistics/tx_bytes 2>/dev/null)
+    rx=$(cat /sys/class/net/$vpn_iface/statistics/rx_bytes 2>/dev/null)
+    tx=$(cat /sys/class/net/$vpn_iface/statistics/tx_bytes 2>/dev/null)
     
     if [ -n "$rx" ] && [ -n "$tx" ]; then
         rx_h=$(awk -v b="$rx" 'BEGIN{
@@ -53,18 +44,7 @@ if [ "$iface_exists" = "1" ]; then
         field "Total TX" "${tx_h}"
     fi
 else
-    field "Interface" "${COLOR_GRAY}${VPN_IFACE} not present${COLOR_RESET}"
-fi
-
-if [ "$status_readable" = "0" ]; then
-    if [ ! -e "$STATUS_LOG" ]; then
-        field "Status log" "${COLOR_YELLOW}not found: $STATUS_LOG${COLOR_RESET}"
-        echo -e "    ${COLOR_GRAY}add to server.conf: status $STATUS_LOG 10${COLOR_RESET}"
-    else
-        field "Status log" "${COLOR_YELLOW}exists but unreadable${COLOR_RESET}"
-        echo -e "    ${COLOR_GRAY}fix perms or run dashboard as root${COLOR_RESET}"
-    fi
-    exit 0
+    field "Interface" "${COLOR_RED}down${COLOR_RESET}"
 fi
 
 declare -A special_by_ip
@@ -98,24 +78,19 @@ else
     /^OpenVPN CLIENT LIST/,/^ROUTING TABLE/ {
         if ($0 ~ /^[^,]+,[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+,[0-9]+,[0-9]+,/) {
             split($0, a, ",")
-            cn=a[1]; raddr=a[2]; rxb=a[3]; txb=a[4]; since=a[5]
-            clients[cn] = raddr "|" rxb "|" txb "|" since
+            print a[1] "\t-\t" a[2] "\t" a[3] "\t" a[4] "\t" a[5]
         }
     }
     /^ROUTING TABLE/,/^GLOBAL STATS/ {
         if ($0 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+,[^,]+,/) {
             split($0, a, ",")
-            vaddr=a[1]; cn=a[2]
-            if (cn in clients) {
-                split(clients[cn], parts, "|")
-                print cn "\t" vaddr "\t" parts[1] "\t" parts[2] "\t" parts[3] "\t" parts[4]
-            }
+            print "ROUTE\t" a[1] "\t" a[2]
         }
     }
     ' "$STATUS_LOG" > "$tmp_clients"
 fi
 
-total_clients=$(wc -l < "$tmp_clients")
+total_clients=$(grep -v "^ROUTE" "$tmp_clients" | wc -l)
 
 if [ "$total_clients" -eq 0 ]; then
     field "Clients" "${COLOR_GRAY}none connected${COLOR_RESET}"
@@ -124,20 +99,28 @@ fi
 
 field "Clients" "${total_clients} connected"
 
+special_count=0
 regular_count=0
+
 while IFS=$'\t' read -r name vaddr realaddr rxb txb since; do
-    [ -n "${special_by_ip[$vaddr]}" ] && continue
-    regular_count=$((regular_count + 1))
+    [ "$name" = "ROUTE" ] && continue
+    if [ -n "${special_by_ip[$vaddr]}" ]; then
+        special_count=$((special_count + 1))
+    else
+        regular_count=$((regular_count + 1))
+    fi
 done < "$tmp_clients"
 
 echo ""
-echo -e "  ${COLOR_WHITE}Special peers:${COLOR_RESET}"
+echo -e "  ${COLOR_WHITE}Special clients:${COLOR_RESET}"
 
+found_any_special=0
 for ip in "${!special_by_ip[@]}"; do
     name="${special_name_by_ip[$ip]}"
     
     found_line=""
     while IFS=$'\t' read -r line_name line_vaddr line_realaddr line_rxb line_txb line_since; do
+        [ "$line_name" = "ROUTE" ] && continue
         if [ "$line_vaddr" = "$ip" ]; then
             found_line="$line_name|$line_realaddr|$line_rxb|$line_txb|$line_since"
             break
@@ -145,10 +128,10 @@ for ip in "${!special_by_ip[@]}"; do
     done < "$tmp_clients"
     
     if [ -n "$found_line" ]; then
+        found_any_special=1
         IFS='|' read -r c_name c_realaddr c_rxb c_txb c_since <<< "$found_line"
         
-        c_realip="${c_realaddr#*:}"
-        c_realip="${c_realip%:*}"
+        c_realip="${c_realaddr%:*}"
         
         rx_h=$(awk -v b="$c_rxb" 'BEGIN{
             if (b>1073741824) printf "%.2f GB", b/1073741824
@@ -167,7 +150,6 @@ for ip in "${!special_by_ip[@]}"; do
             since_epoch=$(date -d "$c_since" +%s 2>/dev/null)
         fi
         
-        up="?"
         if [ -n "$since_epoch" ] && [ "$since_epoch" -gt 0 ]; then
             now_epoch=$(date +%s)
             up_sec=$((now_epoch - since_epoch))
@@ -178,6 +160,8 @@ for ip in "${!special_by_ip[@]}"; do
             if [ "$d" -gt 0 ]; then up="${d}d ${h}h"
             elif [ "$h" -gt 0 ]; then up="${h}h ${m}m"
             else up="${m}m"; fi
+        else
+            up="?"
         fi
         
         printf "    ${COLOR_GREEN}●${COLOR_RESET} %-18s ${COLOR_GRAY}%-15s${COLOR_RESET}\n" "$name" "$ip"
@@ -194,11 +178,11 @@ if [ "$regular_count" -gt 0 ]; then
     
     shown=0
     while IFS=$'\t' read -r name vaddr realaddr rxb txb since; do
+        [ "$name" = "ROUTE" ] && continue
         [ -n "${special_by_ip[$vaddr]}" ] && continue
         [ "$shown" -ge 5 ] && break
         
-        realip="${realaddr#*:}"
-        realip="${realip%:*}"
+        realip="${realaddr%:*}"
         
         rx_h=$(awk -v b="$rxb" 'BEGIN{
             if (b>1048576) printf "%.0fM", b/1048576

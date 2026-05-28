@@ -27,8 +27,8 @@
 #   vpn kick "OnlySq Promo"
 # :endhelpme:
 
-__VPN_STATUS_LOG="${OPENVPN_STATUS_LOG:-/var/log/openvpn/status.log}"
-__VPN_SERVER_LOG="${OPENVPN_SERVER_LOG:-/var/log/openvpn/status.log}"
+__VPN_STATUS_LOG="${OPENVPN_STATUS_LOG:-/var/log/openvpn/openvpn-status.log}"
+__VPN_SERVER_LOG="${OPENVPN_SERVER_LOG:-/var/log/openvpn/openvpn.log}"
 __VPN_DIR="${OPENVPN_DIR:-/etc/openvpn/server}"
 __VPN_CLIENTS_DIR="${OPENVPN_CLIENTS_DIR:-/etc/openvpn/clients}"
 __VPN_EASYRSA="${OPENVPN_EASYRSA_DIR:-/etc/openvpn/easy-rsa}"
