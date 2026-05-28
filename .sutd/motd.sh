@@ -1,7 +1,12 @@
 #!/bin/bash
 
 export SUTD_DIR="$HOME/.sutd"
-[ -f "$SUTD_DIR/info.conf" ] && source "$SUTD_DIR/info.conf"
+# [ -f "$SUTD_DIR/info.conf" ] && source "$SUTD_DIR/info.conf"
+if [ -f "$SUTD_DIR/info.conf" ]; then
+    set -a
+    source "$SUTD_DIR/info.conf"
+    set +a
+fi
 [ -f "$SUTD_DIR/lib.sh" ]    && source "$SUTD_DIR/lib.sh"
 
 export COLOR_WHITE='\033[37m'
