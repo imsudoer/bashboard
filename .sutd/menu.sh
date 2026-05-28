@@ -73,6 +73,7 @@ show_footer_bar() {
 SLIDES=(
     "Overview|10-host.sh 30-system.sh 49-server-age.sh 47-streak.sh 48-uptime-record.sh"
     "Network|20-network.sh"
+    "OpenVPN|65-openvpn.sh"
     "Resources|40-resources.sh 52-progress-bars.sh 53-ascii-graph.sh"
     "Top Processes|46-top-processes.sh"
     "Services|50-services.sh"
