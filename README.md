@@ -103,7 +103,7 @@ beyond standard Linux utilities.
 ## Install
 
 ```bash
-git clone https://github.com/yourname/bashboard ~/.sutd
+git clone https://github.com/imsudoer/bashboard ~/.sutd
 ~/.sutd/install.sh
 exec bash
 ```
