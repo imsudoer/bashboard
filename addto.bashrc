@@ -6,7 +6,7 @@ for f in ~/.sutd/terminal/*.sh; do
     [ -r "$f" ] && source "$f"
 done
 
-# For nice arrow add this:
+# For nice signature arrow prompt add this:
 
 set_prompt() {
     local EXIT_CODE="$?"
@@ -25,4 +25,11 @@ set_prompt() {
     PS1="${UI_USER}\u${UI_RESET}@${UI_HOST}\h${UI_RESET}:${UI_PATH}\w${UI_RESET} ${ARROW} "
 }
 
-PROMPT_COMMAND="$PROMPT_COMMAND;set_prompt"
+if [ -z "$PROMPT_COMMAND" ]; then
+    PROMPT_COMMAND="set_prompt"
+else
+    case ";$PROMPT_COMMAND;" in
+        *";set_prompt;"*) ;;
+        *) PROMPT_COMMAND="$PROMPT_COMMAND;set_prompt" ;;
+    esac
+fi

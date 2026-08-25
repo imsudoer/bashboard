@@ -53,9 +53,9 @@ __sutd_git_info() {
     fi
     
     if [ -n "$dirty" ]; then
-        echo " $$\033[38;5;208m$$(${branch} ${dirty})$$\033[0m$$"
+        echo " \[\033[38;5;208m\](${branch} ${dirty})\[\033[0m\]"
     else
-        echo " $$\033[32m$$(${branch})$$\033[0m$$"
+        echo " \[\033[32m\](${branch})\[\033[0m\]"
     fi
 }
 
@@ -81,14 +81,14 @@ __sutd_breadcrumbs() {
         fi
         
         if [ -z "$rel" ]; then
-            echo "$$\033[38;5;208m$$⌂ ${proj_name}$$\033[0m$$"
+            echo "\[\033[38;5;208m\]⌂ ${proj_name}\[\033[0m\]"
         else
             local crumbs
-            crumbs=$(echo "$rel" | sed 's|/| \$$\\033[90m\$$›\$$\\033[37m\$$ |g')
-            echo "$$\033[38;5;208m$$⌂ ${proj_name}$$\033[90m$$ › $$\033[37m$$${crumbs}$$\033[0m$$"
+            crumbs=$(echo "$rel" | sed 's|/| \\[\033[90m\\]›\\[\033[37m\\] |g')
+            echo "\[\033[38;5;208m\]⌂ ${proj_name}\[\033[90m\] › \[\033[37m\]${crumbs}\[\033[0m\]"
         fi
     else
-        echo "$$\033[37m$$\w$$\033[0m$$"
+        echo "\[\033[37m\]\w\[\033[0m\]"
     fi
 }
 
@@ -98,16 +98,16 @@ set_prompt() {
     
     local ARROW_COLOR
     if [ "$EXIT_CODE" -eq 0 ]; then
-        ARROW_COLOR='$$\033[32m$$'
+        ARROW_COLOR='\[\033[32m\]'
     else
-        ARROW_COLOR='$$\033[31m$$'
+        ARROW_COLOR='\[\033[31m\]'
     fi
     
     local DUR=""
     if [ -n "$__SUTD_LAST_DURATION" ]; then
         local secs="${__SUTD_LAST_DURATION%.*}"
         if [ "${secs:-0}" -ge 3 ]; then
-            DUR=' $$\033[33m$$[took '"$__SUTD_LAST_DURATION"'s]$$\033[0m$$'
+            DUR=' \[\033[33m\][took '"$__SUTD_LAST_DURATION"'s]\[\033[0m\]'
         fi
     fi
     
@@ -115,7 +115,7 @@ set_prompt() {
     CRUMBS=$(__sutd_breadcrumbs)
     GITINFO=$(__sutd_git_info)
     
-    PS1='$$\033[38;5;250m$$\u$$\033[0m$$@$$\033[38;5;208m$$\h$$\033[0m$$:'"${CRUMBS}${GITINFO}${DUR}"' '"${ARROW_COLOR}"'❯$$\033[0m$$ '
+    PS1='\[\033[38;5;250m\]\u\[\033[0m\]@\[\033[38;5;208m\]\h\[\033[0m\]:'"${CRUMBS}${GITINFO}${DUR}"' '"${ARROW_COLOR}"'❯\[\033[0m\] '
 }
 
 if [ -z "$PROMPT_COMMAND" ]; then

@@ -367,22 +367,51 @@ install_files() {
     
     say_ok "Directory structure created"
     
-    local script_dir
+    local script_dir src_dir
     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     
     if [ "$script_dir" = "$INSTALL_DIR" ]; then
         say_ok "Already in $INSTALL_DIR — keeping current files"
+        src_dir="$INSTALL_DIR"
+    elif [ -d "$script_dir/.sutd/modules" ] && [ -d "$script_dir/.sutd/terminal" ]; then
+        src_dir="$script_dir/.sutd"
     elif [ -d "$script_dir/modules" ] && [ -d "$script_dir/terminal" ]; then
-        say_dim "Copying from $script_dir → $INSTALL_DIR"
-        run cp -r "$script_dir/modules/." "$INSTALL_DIR/modules/" 2>/dev/null || true
-        run cp -r "$script_dir/terminal/." "$INSTALL_DIR/terminal/" 2>/dev/null || true
-        [ -f "$script_dir/motd.sh" ]   && run cp "$script_dir/motd.sh" "$INSTALL_DIR/"
-        [ -f "$script_dir/menu.sh" ]   && run cp "$script_dir/menu.sh" "$INSTALL_DIR/"
-        [ -f "$script_dir/lib.sh" ]    && run cp "$script_dir/lib.sh" "$INSTALL_DIR/"
-        [ -d "$script_dir/docs" ]      && run cp -r "$script_dir/docs/." "$INSTALL_DIR/docs/" 2>/dev/null || true
-        say_ok "Files copied"
+        src_dir="$script_dir"
     else
-        say_warn "Source files not detected — install from git:"
+        say_dim "Source files not found locally — downloading from GitHub repository..."
+        local tmp_clone
+        tmp_clone=$(mktemp -d /tmp/bashboard-install.XXXXXX 2>/dev/null || mktemp -d)
+        if command -v git &>/dev/null && git clone --depth 1 "$SUTD_REPO_URL" "$tmp_clone" &>/dev/null; then
+            if [ -d "$tmp_clone/.sutd" ]; then
+                src_dir="$tmp_clone/.sutd"
+            else
+                src_dir="$tmp_clone"
+            fi
+        elif command -v curl &>/dev/null && command -v tar &>/dev/null; then
+            curl -fsSL "${SUTD_REPO_URL}/archive/refs/heads/main.tar.gz" 2>/dev/null | tar -xz -C "$tmp_clone" --strip-components=1 2>/dev/null || true
+            if [ -d "$tmp_clone/.sutd" ]; then
+                src_dir="$tmp_clone/.sutd"
+            else
+                src_dir="$tmp_clone"
+            fi
+        fi
+    fi
+    
+    if [ -n "${src_dir:-}" ] && [ -d "$src_dir/modules" ]; then
+        if [ "$src_dir" != "$INSTALL_DIR" ]; then
+            say_dim "Copying from $src_dir → $INSTALL_DIR"
+            run cp -r "$src_dir/modules/." "$INSTALL_DIR/modules/" 2>/dev/null || true
+            run cp -r "$src_dir/terminal/." "$INSTALL_DIR/terminal/" 2>/dev/null || true
+            [ -f "$src_dir/motd.sh" ]   && run cp "$src_dir/motd.sh" "$INSTALL_DIR/"
+            [ -f "$src_dir/menu.sh" ]   && run cp "$src_dir/menu.sh" "$INSTALL_DIR/"
+            [ -f "$src_dir/tui.sh" ]    && run cp "$src_dir/tui.sh" "$INSTALL_DIR/"
+            [ -f "$src_dir/lib.sh" ]    && run cp "$src_dir/lib.sh" "$INSTALL_DIR/"
+            [ -d "$src_dir/docs" ]      && run cp -r "$src_dir/docs/." "$INSTALL_DIR/docs/" 2>/dev/null || true
+            [ -d "$src_dir/data" ]      && run cp -r "$src_dir/data/." "$INSTALL_DIR/data/" 2>/dev/null || true
+            say_ok "Files copied"
+        fi
+    else
+        say_err "Source files not detected — install from git:"
         say_dim "  git clone $SUTD_REPO_URL $INSTALL_DIR"
         return 1
     fi
@@ -433,20 +462,27 @@ set_prompt() {
     local EXIT_CODE="$?"
     
     if [ $EXIT_CODE -eq 0 ]; then
-        local ARROW="$$\033[32m$$❯$$\033[0m$$"
+        local ARROW="\[\033[32m\]❯\[\033[0m\]"
     else
-        local ARROW="$$\033[31m$$❯$$\033[0m$$"
+        local ARROW="\[\033[31m\]❯\[\033[0m\]"
     fi
 
-    local UI_USER="$$\033[38;5;250m$$"
-    local UI_HOST="$$\033[38;5;208m$$"
-    local UI_PATH="$$\033[37m$$"
-    local UI_RESET="$$\033[0m$$"
+    local UI_USER="\[\033[38;5;250m\]"
+    local UI_HOST="\[\033[38;5;208m\]"
+    local UI_PATH="\[\033[37m\]"
+    local UI_RESET="\[\033[0m\]"
 
     PS1="${UI_USER}\u${UI_RESET}@${UI_HOST}\h${UI_RESET}:${UI_PATH}\w${UI_RESET} ${ARROW} "
 }
 
-PROMPT_COMMAND=set_prompt
+if [ -z "$PROMPT_COMMAND" ]; then
+    PROMPT_COMMAND="set_prompt"
+else
+    case ";$PROMPT_COMMAND;" in
+        *";set_prompt;"*) ;;
+        *) PROMPT_COMMAND="$PROMPT_COMMAND;set_prompt" ;;
+    esac
+fi
 PROMPT_EOF
     
     say_ok "Prompt installed: $prompt_file"

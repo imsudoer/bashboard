@@ -1,13 +1,15 @@
 #!/bin/bash
 
 RECORD_FILE="$SUTD_DIR/data/uptime_record.dat"
-UPTIME_SECONDS=$(awk '{print int($1)}' /proc/uptime)
+UPTIME_SECONDS=$(awk '{print int($1)}' /proc/uptime 2>/dev/null | tr -dc '0-9')
+[ -z "$UPTIME_SECONDS" ] && UPTIME_SECONDS=0
 
 if [ -f "$RECORD_FILE" ]; then
-    MAX_UPTIME=$(cat "$RECORD_FILE")
+    MAX_UPTIME=$(cat "$RECORD_FILE" | tr -dc '0-9')
 else
     MAX_UPTIME=0
 fi
+[ -z "$MAX_UPTIME" ] && MAX_UPTIME=0
 
 if [ "$UPTIME_SECONDS" -gt "${MAX_UPTIME:-0}" ]; then
     MAX_UPTIME=$UPTIME_SECONDS

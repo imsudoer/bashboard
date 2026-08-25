@@ -18,14 +18,20 @@ ACHIEVEMENTS=(
     "age_365|Veteran|server is 1 year old"
 )
 
-UPTIME_SECONDS=$(awk '{print int($1)}' /proc/uptime)
+UPTIME_SECONDS=$(awk '{print int($1)}' /proc/uptime 2>/dev/null | tr -dc '0-9')
+[ -z "$UPTIME_SECONDS" ] && UPTIME_SECONDS=0
 UPTIME_DAYS=$((UPTIME_SECONDS / 86400))
 
-STREAK=$(awk -F= '/^streak=/ {print $2}' "$SUTD_DIR/data/streak.dat" 2>/dev/null || echo 0)
-MAX_STREAK=$(awk -F= '/^max=/ {print $2}' "$SUTD_DIR/data/streak.dat" 2>/dev/null || echo 0)
+STREAK=$(awk -F= '/^streak=/ {print $2}' "$SUTD_DIR/data/streak.dat" 2>/dev/null | tr -dc '0-9')
+[ -z "$STREAK" ] && STREAK=0
+MAX_STREAK=$(awk -F= '/^max=/ {print $2}' "$SUTD_DIR/data/streak.dat" 2>/dev/null | tr -dc '0-9')
+[ -z "$MAX_STREAK" ] && MAX_STREAK=0
 
-INSTALL_EPOCH=$(cat "$SUTD_DIR/data/install_date.dat" 2>/dev/null || echo "$(date +%s)")
-AGE_DAYS=$(( ($(date +%s) - INSTALL_EPOCH) / 86400 ))
+INSTALL_EPOCH=$(cat "$SUTD_DIR/data/install_date.dat" 2>/dev/null | tr -dc '0-9')
+NOW_EPOCH=$(date +%s)
+[ -z "$INSTALL_EPOCH" ] && INSTALL_EPOCH=$NOW_EPOCH
+AGE_DAYS=$(( (NOW_EPOCH - INSTALL_EPOCH) / 86400 ))
+[ "$AGE_DAYS" -lt 0 ] && AGE_DAYS=0
 
 check_unlock() {
     case "$1" in

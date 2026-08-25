@@ -5,12 +5,15 @@ TODAY=$(date +%Y-%m-%d)
 YESTERDAY=$(date -d "yesterday" +%Y-%m-%d)
 
 if [ -f "$STREAK_FILE" ]; then
-    LAST_DATE=$(awk -F= '/^last=/ {print $2}' "$STREAK_FILE")
-    STREAK=$(awk -F= '/^streak=/ {print $2}' "$STREAK_FILE")
-    MAX_STREAK=$(awk -F= '/^max=/ {print $2}' "$STREAK_FILE")
+    LAST_DATE=$(awk -F= '/^last=/ {print $2}' "$STREAK_FILE" | tr -d '\r\n[:space:]')
+    STREAK=$(awk -F= '/^streak=/ {print $2}' "$STREAK_FILE" | tr -dc '0-9')
+    MAX_STREAK=$(awk -F= '/^max=/ {print $2}' "$STREAK_FILE" | tr -dc '0-9')
 else
     LAST_DATE=""; STREAK=0; MAX_STREAK=0
 fi
+
+[ -z "$STREAK" ] && STREAK=0
+[ -z "$MAX_STREAK" ] && MAX_STREAK=0
 
 if [ "$LAST_DATE" != "$TODAY" ]; then
     if [ "$LAST_DATE" = "$YESTERDAY" ]; then
